@@ -9,6 +9,10 @@ services:
       - "25565:25565" # Game-server port, change if needed
       - "8123:8123" # GTNH-Web-Map
     environment:
+      MAX_TICK_TIME: -1
+      ENABLE_AUTOSTOP: "true"
+      AUTOSTOP_TIMEOUT_EST: 600
+      AUTOSTOP_TIMEOUT_INIT: 600
       EULA: "TRUE"
       TYPE: CUSTOM
       GENERIC_PACK: /server-files/GT_New_Horizons_2.8.1_Server_Java_17-25.zip
@@ -86,8 +90,9 @@ services:
       INCLUDES: .
       BACKUP_ON_STARTUP: "false"
       PAUSE_IF_NO_PLAYERS: "true"
+      PLAYERS_ONLINE_CHECK_INTERVAL: "30s"
       BACKUP_METHOD: restic
-      EXCLUDES: "*.jar,cache,logs,*.tmp,dynmap,backups,mods,config_backup*"
+      EXCLUDES: "*.jar,cache,logs,*.tmp,dynmap,backups,config_backup*"
       RCLONE_REMOTE: "onedrive-mc"
       RCLONE_DEST_DIR: "Games/Minecraft_Servers_and_Saves/Docker/"
       RCLONE_CONFIG: "/config/rclone/rclone.conf"
