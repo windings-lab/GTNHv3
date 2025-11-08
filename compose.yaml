@@ -1,0 +1,110 @@
+services:
+  gtnh:
+    image: itzg/minecraft-server:java25-graalvm
+    pull_policy: missing
+    restart: no
+    tty: true
+    stdin_open: true
+    ports:
+      - "25565:25565" # Game-server port, change if needed
+      - "8123:8123" # GTNH-Web-Map
+    environment:
+      EULA: "TRUE"
+      TYPE: CUSTOM
+      GENERIC_PACK: /server-files/GT_New_Horizons_2.8.1_Server_Java_17-25.zip
+      # If this isn't true, then the container tries to update the modpack every run. This could break the modpack!
+      SKIP_GENERIC_PACK_UPDATE_CHECK: "true"
+      # Use during an update process for manual intervention:
+      SETUP_ONLY: false
+      CUSTOM_SERVER: "lwjgl3ify-forgePatches.jar"
+#      INIT_MEMORY: "8G" # Set initial heap
+#      MAX_MEMORY: "8G" # Set max heap
+      MEMORY: "8G"
+      JVM_OPTS: "-Dfml.readTimeout=180 -XX:+UseCompactObjectHeaders @java9args.txt"
+      # Set server.properties according to GTNH default
+      MOTD: "GT:New Horizons on Docker"
+      DIFFICULTY: "hard"
+      ENABLE_COMMAND_BLOCK: "true"
+      SPAWN_PROTECTION: 1
+      VIEW_DISTANCE: 16
+      MODE: 0
+      LEVEL_TYPE: "rwg"
+      ALLOW_FLIGHT: "TRUE"
+      # Dump content of server.properties file at start (useful for debugging)
+      DUMP_SERVER_PROPERTIES: "TRUE"
+      # Enable minecraft server console access
+      CREATE_CONSOLE_IN_PIPE: "true"
+# Set Whitelist
+      WHITELIST: |
+        Chara_Q
+# Set Administrators
+      OPS: |
+        Chara_Q
+    depends_on:
+      restore-backup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "mc-monitor", "status"]
+      start_period: 5m
+      interval: 5s
+      retries: 20
+    volumes:
+      - mc-data:/data
+      - ./exchange:/server-files:ro
+  restore-backup:
+    # Same image as mc, but any base image with bash and tar will work
+    image: itzg/mc-backup
+    restart: "no"
+    entrypoint: ["/bin/bash"]
+    command: ["/restore.sh", "/server-files/GT_New_Horizons_2.8.1_Server_Java_17-25.zip"]
+    environment:
+      SKIP_RESTORE: false
+      BACKUP_ID: latest # Restic backup id to restore. Default: latest
+      BACKUP_METHOD: restic
+      BACKUP_NAME: GTNH_281
+      RESTIC_PASSWORD: Gaster
+      RESTIC_REPOSITORY: rclone:onedrive-mc:Games/Minecraft_Servers_and_Saves/Docker
+      RESTIC_VERBOSE: "true"
+      RCLONE_REMOTE: onedrive-mc
+      RCLONE_DEST_DIR: "Games/Minecraft_Servers_and_Saves/Docker/"
+      RCLONE_CONFIG: /config/restore_rclone/rclone.conf
+    volumes:
+      - C:/Users/jAnto/AppData/Roaming/rclone/rclone.conf:/config/restore_rclone/rclone.conf:rw
+      - mc-data:/data
+      - ./restore.sh:/restore.sh:ro
+      - backups:/backups:ro
+      - ./mc-backups:/backups:ro
+      - ./exchange:/server-files:ro
+  backup:
+    image: itzg/mc-backup
+    restart: unless-stopped
+    environment:
+      RCON_HOST: gtnh
+      BACKUP_NAME: GTNH_281
+      BACKUP_INTERVAL: "10m"
+      INITIAL_DELAY: 0
+      INCLUDES: .
+      BACKUP_ON_STARTUP: "true"
+      PAUSE_IF_NO_PLAYERS: "true"
+      BACKUP_METHOD: restic
+      EXCLUDES: "*.jar,cache,logs,*.tmp,dynmap,backups,mods,config_backup*"
+      RCLONE_REMOTE: "onedrive-mc"
+      RCLONE_DEST_DIR: "Games/Minecraft_Servers_and_Saves/Docker/"
+      RCLONE_CONFIG: "/config/rclone/rclone.conf"
+      RESTIC_PASSWORD: Gaster
+      RESTIC_VERBOSE: "true"
+      RESTIC_REPOSITORY: rclone:onedrive-mc:Games/Minecraft_Servers_and_Saves/Docker/
+      PRUNE_BACKUPS_DAYS: 0.01042 # Prune every 15 minutes
+      PRUNE_RESTIC_RETENTION: "--keep-last 10 --group-by tags"
+    depends_on:
+      gtnh:
+        condition: service_healthy
+    volumes:
+      - C:/Users/jAnto/AppData/Roaming/rclone/rclone.conf:/config/rclone/rclone.conf:rw
+      - mc-data:/data:ro
+      - backups:/backups
+      - ./mc-backups:/backups
+
+volumes:
+  mc-data:
+  backups:
