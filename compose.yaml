@@ -84,7 +84,7 @@ services:
       BACKUP_INTERVAL: "10m"
       INITIAL_DELAY: 0
       INCLUDES: .
-      BACKUP_ON_STARTUP: "true"
+      BACKUP_ON_STARTUP: "false"
       PAUSE_IF_NO_PLAYERS: "true"
       BACKUP_METHOD: restic
       EXCLUDES: "*.jar,cache,logs,*.tmp,dynmap,backups,mods,config_backup*"
@@ -94,7 +94,7 @@ services:
       RESTIC_PASSWORD: Gaster
       RESTIC_VERBOSE: "true"
       RESTIC_REPOSITORY: rclone:onedrive-mc:Games/Minecraft_Servers_and_Saves/Docker/
-      PRUNE_BACKUPS_DAYS: 0.01042 # Prune every 15 minutes
+      PRUNE_BACKUPS_DAYS: "1/96" # Prune every 15 minutes
       PRUNE_RESTIC_RETENTION: "--keep-last 10 --group-by tags"
     depends_on:
       gtnh:
